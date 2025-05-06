@@ -1,6 +1,6 @@
 
 ### lambda: tuning parameter for the penalty of model averaging
-PMA<-function(X=Data_X,Y=Data_Y,lambda=2,intercept=F,sorted=F){
+PMA<-function(X=Data_X,Y=Data_Y,lambda=2,intercept=T,sorted=T){
   p=length(X[1,])
   n=length(Y)
   colnames(X)<-1:p

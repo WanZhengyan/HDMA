@@ -1,7 +1,7 @@
 
 ### sum1: relax the space of weight vector if sum1=F
 ### ds: a vector for choosing the model dimension of the candidate models
-AnL<-function(X=Data_X,Y=Data_Y,ds,family="gaussian",sum1=F,intercept=F,sorted=T){
+AnL<-function(X=Data_X,Y=Data_Y,ds,family="gaussian",sum1=F,intercept=T,sorted=T){
   if(intercept==T){
     X<-scale(X,scale=F)
     center=as.vector(attr(X,"scaled:center"))
@@ -30,7 +30,7 @@ AnL<-function(X=Data_X,Y=Data_Y,ds,family="gaussian",sum1=F,intercept=F,sorted=T
   weights_list<-list()
   beta_MA_list<-list()
   for(d in ds){
-    K<-min(floor(sum(importance<=0.05)/d),floor(sqrt(n)))
+    K<-min(floor(sum(importance<=0.05)/d),floor(n/log(n)))
     if(sum(importance<=0.05)/d-K>0 && family=="gaussian"){
       pred_matrix<-matrix(0,nrow=0,ncol=K+1)
     }else{
@@ -99,28 +99,35 @@ AnL<-function(X=Data_X,Y=Data_Y,ds,family="gaussian",sum1=F,intercept=F,sorted=T
         beta_matrix<-cbind(beta_matrix,beta)
       }
     }
-    if(sum(importance<=0.05)/d-K>0 && family=="gaussian"){
-      w<-Variable(K+1)
+    if(K==0){
+      beta_MA<-as.vector(beta_matrix%*%c(1))
+      cv<-c(cv,sum((Y-pred_matrix%*%c(1))^2))
     }else{
-      w<-Variable(K)
+      if(sum(importance<=0.05)/d-K>0 && family=="gaussian"){
+        w<-Variable(K+1)
+      }else{
+        w<-Variable(K)
+      }
+      if(family=="gaussian"){
+        objective_w_expr<-cvxr_norm(pred_matrix%*%w-Y)^2
+      }else if(family=="binomial"){
+        objective_w_expr<-sum(logistic(pred_matrix%*%w)-Y*(pred_matrix%*%w))
+      }
+      objective_w<-Minimize(objective_w_expr)
+      if(sum1==F){
+        result<-solve(Problem(objective_w,constraints=list(w >= 0, w <= 1)))
+      }else{
+        result<-solve(Problem(objective_w,constraints=list(w >= 0, sum(w)==1)))
+      }
+      weights<-result$getValue(w)
+      beta_MA<-as.vector(beta_matrix%*%weights)
+      cv<-c(cv,result$value)
     }
-    if(family=="gaussian"){
-      objective_w_expr<-cvxr_norm(pred_matrix%*%w-Y)^2
-    }else if(family=="binomial"){
-      objective_w_expr<-sum(logistic(pred_matrix%*%w)-Y*(pred_matrix%*%w))
-    }
-    objective_w<-Minimize(objective_w_expr)
-    if(sum1==F){
-      result<-solve(Problem(objective_w,constraints=list(w >= 0, w <= 1)))
-    }else{
-      result<-solve(Problem(objective_w,constraints=list(w >= 0, sum(w)==1)))
-    }
-    weights<-result$getValue(w)
-    beta_MA<-as.vector(beta_matrix%*%weights)
+    
     if(intercept==T){
       beta_MA[1]<-beta_MA[1]-sum(beta_MA[-1]*center)
     }
-    cv<-c(cv,result$value)
+    
     beta_MA_list<-append(beta_MA_list,list(beta_MA))
     weights_list<-append(weights_list,list(weights))
   }
