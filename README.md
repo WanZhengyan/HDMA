@@ -1,6 +1,6 @@
 # High-Dimensional Model Averaging via Cross-validation
 
-To reproduce the data analysis results in the paper, simply run the files: Simulation_Lin.R, Simulation_Log.R, Simulation_Inference_Lin.R, Simulation_Inference_Log.R and Real-Data.R.
+To reproduce the data analysis results in the paper, simply run the files: Simulation_Lin.R, Simulation_Log.R, Simulation_Inference_Lin.R, Simulation_Inference_Log.R and Real_Data.R.
 
 Here are some descriptions for other R files.
 
