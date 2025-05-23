@@ -61,7 +61,6 @@ simulation<-foreach(setting=1:length(settings[,1]),.combine="rbind",.packages=pa
   vec_lasso_test=c();vec_pflasso_test=c();vec_MCP_test=c();
   vec_EN_test=c();vec_alasso_test=c();vec_SCAD_test=c();vec_HDMA_Lasso_test=c();
   vec_HDMA_SCAD_test=c();vec_HDMA_MCP_test=c();vec_AnL_test=c();vec_PMA_test=c()
-  vec_HDMA_OPT_test=c()
   for(round in 1:100){
     #generate the training set
     Data_train<-Create_data_lin(n,p,Sigma,beta,sd=sd)
@@ -107,14 +106,6 @@ simulation<-foreach(setting=1:length(settings[,1]),.combine="rbind",.packages=pa
     beta_HDMA_MCP<-HDMA_MCP_fit[[1]]
     vec_HDMA_MCP_test<-c(vec_HDMA_MCP_test,l2_loss(test_X,test_Y,beta_HDMA_MCP))
     
-    # HDMA-OPT
-    opt_idx<-which.min(c(HDMA_Lasso_fit$obj_values[length(HDMA_Lasso_fit$obj_values)],
-                         HDMA_SCAD_fit$obj_values[length(HDMA_SCAD_fit$obj_values)],
-                         HDMA_MCP_fit$obj_values[length(HDMA_MCP_fit$obj_values)]))
-    vec_HDMA_OPT_test<-c(vec_HDMA_OPT_test,c(l2_loss(test_X,test_Y,beta_HDMA_Lasso),
-                                             l2_loss(test_X,test_Y,beta_HDMA_SCAD),
-                                             l2_loss(test_X,test_Y,beta_HDMA_MCP))[opt_idx])
-
     # AnL
     AnL_fit<-AnL(Data_X,Data_Y,ds=0.05*n*c(1:8),family="gaussian",intercept=F)
     beta_AnL<-AnL_fit[[1]]
@@ -136,8 +127,7 @@ simulation<-foreach(setting=1:length(settings[,1]),.combine="rbind",.packages=pa
     PMA = vec_PMA_test,
     HDMALasso = vec_HDMA_Lasso_test,
     HDMASCAD = vec_HDMA_SCAD_test,
-    HDMAMCP = vec_HDMA_MCP_test,
-    HDMAOPT = vec_HDMA_OPT_test
+    HDMAMCP = vec_HDMA_MCP_test
   )
   result<-cbind(data.frame(betatype=i,n=n,p=p,Xtype=X_type,measure=c("Mean","SD","Median")),rbind(apply(test,2,mean),apply(test,2,sd),apply(test,2,median)))
   data_long <- pivot_longer(test, cols = names(test), names_to = "Model", values_to = "value")
